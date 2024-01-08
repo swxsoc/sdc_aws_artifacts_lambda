@@ -1,0 +1,68 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Installing CI/CD Dependencies...
+      - python -m venv venv
+      - echo "source venv/bin/activate" > activate.sh
+      - bash activate.sh
+      - pip3 install --upgrade pip setuptools wheel
+      - pip3 install -r requirements.txt
+      - echo ________________________________
+
+      - echo Linting with Black...
+      - black --check --diff lambda_function/
+      - echo ________________________________
+      
+      - echo Linting with Flake...
+      - flake8 --count --max-line-length 100 lambda_function/
+      - echo ________________________________
+
+  build:
+    commands:
+    - REGION=us-east-1
+    - echo Login to Private ECR $REGION
+    - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin 351967858401.dkr.ecr.$REGION.amazonaws.com
+    - echo ________________________________
+    - ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+
+    - |
+      BASE_IMAGE="public.ecr.aws/w5r9l1c8/swsoc-docker-lambda-base:latest"
+      if git describe --tags --exact-match > /dev/null 2>&1; then
+        echo "This is a tag push event"
+        ECR_REPO="$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/sdc_aws_artifacts_lambda"
+        CDK_ENVIRONMENT=PRODUCTION
+        VERSION=`git describe --tags --exact-match`
+      elif [[ "${CDK_ENVIRONMENT}" == "PRODUCTION" ]]; then
+        echo "This is a production environment"
+        ECR_REPO="$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/sdc_aws_artifacts_lambda"
+        CDK_ENVIRONMENT=PRODUCTION
+        VERSION=`date -u +"%Y%m%d%H%M%S"`
+      else
+        echo "This is a development environment"
+        ECR_REPO="$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/dev-sdc_aws_artifacts_lambda"
+        BASE_IMAGE="public.ecr.aws/w5r9l1c8/dev-swsoc-docker-lambda-base:latest"
+        CDK_ENVIRONMENT=DEVELOPMENT
+        VERSION=`date -u +"%Y%m%d%H%M%S"`
+      fi
+    - echo ________________________________
+    - echo Build Docker Image
+    - docker build --build-arg BASE_IMAGE=$BASE_IMAGE -t $ECR_REPO:latest lambda_function/.
+
+
+    - echo Tagging Docker Image...
+    - docker tag $ECR_REPO:latest $ECR_REPO:$VERSION
+
+    - echo Pushing the Docker image with Tags...
+    - docker push $ECR_REPO:latest
+    - docker push $ECR_REPO:$VERSION
+    - echo ________________________________
+
+    - echo Updating Deployment
+    - echo ________________________________
+    - aws codebuild start-build --project-name arn:aws:codebuild:us-east-2:351967858401:project/build_sdc_aws_pipeline_architecture --environment-variables-override name=CDK_ENVIRONMENT,value=$CDK_ENVIRONMENT,type=PLAINTEXT
+
+  post_build:
+    commands:
+      - echo Build Successful - Lambda Successfully Built and Pushed to ECR

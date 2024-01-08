@@ -1,0 +1,19 @@
+*.swp
+package-lock.json
+__pycache__
+.pytest_cache
+.venv
+*.egg-info
+
+# CDF artifact directory
+*.cdf
+
+# Python artifacts
+*.egg
+*.egg-info
+dist
+build
+*.pyc
+*.log
+.coverage
+htmlcov
