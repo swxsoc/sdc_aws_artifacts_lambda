@@ -16,7 +16,6 @@ from sdc_aws_utils.config import (
     TSD_REGION,
     parser as science_filename_parser,
     get_instrument_bucket,
-    
 )
 from sdc_aws_utils.aws import (
     create_timestream_client_session,
@@ -109,7 +108,6 @@ class ArtifactProcessor:
         # Process File
         self._process_artifacts()
 
-
     def _process_artifacts(self) -> None:
         """
         This method serves as the main entry point for the ArtifactProcessor class.
@@ -131,7 +129,7 @@ class ArtifactProcessor:
 
         # Parse file key to needed information
         parsed_file_key = parse_file_key(self.file_key)
-        
+
         # Parse the science file name
         science_file = science_filename_parser(parsed_file_key)
         this_instr = science_file["instrument"]
@@ -144,12 +142,12 @@ class ArtifactProcessor:
             parsed_file_key,
             self.dry_run,
         )
-        
+
         # Generate Slack Artifacts
         self._generate_slack_artifacts(
             parsed_file_key,
         )
-        
+
         # Generate Timestream Artifacts
         self._generate_timestream_artifacts(
             self.file_key,
@@ -157,7 +155,7 @@ class ArtifactProcessor:
             destination_bucket,
             self.environment,
         )
-        
+
         # Generate CDFTracker Artifacts
         self._generate_cdftracker_artifacts(
             science_filename_parser,
@@ -229,7 +227,7 @@ class ArtifactProcessor:
         try:
             # Initialize Timestream Client
             timestream_client = create_timestream_client_session(TSD_REGION)
-            
+
             if timestream_client:
                 # Log to timeseries database
                 log_to_timestream(
@@ -251,9 +249,7 @@ class ArtifactProcessor:
             )
 
     @staticmethod
-    def _generate_cdftracker_artifacts(
-        science_filename_parser, file_path
-    ):
+    def _generate_cdftracker_artifacts(science_filename_parser, file_path):
         """
         Tracks processed science product in the CDF Tracker file database. It involves initializing the database engine, setting up database tables, and tracking both the original and processed files.
 
@@ -296,4 +292,3 @@ class ArtifactProcessor:
                         "message": f"Error when initializing database engine: {e}",
                     }
                 )
-                
