@@ -1,14 +1,12 @@
-import pytest
 import json
 import os
-from unittest.mock import patch, MagicMock
-from pathlib import Path
+from unittest.mock import patch
 from moto import mock_s3, mock_secretsmanager
 
 os.environ["SDC_AWS_CONFIG_FILE_PATH"] = "lambda_function/src/config.yaml"
 
-# Import the module to be tested
-from src.process_artifacts.process_artifacts import handle_event, ArtifactProcessor
+from src.process_artifacts.process_artifacts import handle_event, ArtifactProcessor  # noqa: E402
+
 
 # Constants for testing
 TEST_S3_BUCKET = "hermes-eea"

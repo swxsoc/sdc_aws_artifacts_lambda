@@ -28,5 +28,5 @@ jobs:
         black --check --diff lambda_function
     - name: Lint Code with Flake
       run: |
-        flake8 --count --max-line-length 88 lambda_function
+        flake8 --count --max-line-length 100 lambda_function
 

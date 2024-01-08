@@ -167,7 +167,8 @@ class ArtifactProcessor:
         filename_path,
     ):
         """
-        Generates and sends Slack notifications for the file processing pipeline. Includes error handling for Slack API interactions.
+        Generates and sends Slack notifications for the file processing pipeline.
+        Includes error handling for Slack API interactions.
 
         :param filename_path: The pathname of the new file.
         :type filename_path: str
@@ -213,7 +214,9 @@ class ArtifactProcessor:
         file_key, new_file_key, destination_bucket, environment
     ):
         """
-        Logs file processing events to Amazon Timestream. Handles the initialization of the Timestream client and logs the necessary information.
+        Logs file processing events to Amazon Timestream.
+        Handles the initialization of the Timestream client
+        and logs the necessary information.
 
         :param file_key: The key of the original file.
         :type file_key: str
@@ -251,7 +254,9 @@ class ArtifactProcessor:
     @staticmethod
     def _generate_cdftracker_artifacts(science_filename_parser, file_path):
         """
-        Tracks processed science product in the CDF Tracker file database. It involves initializing the database engine, setting up database tables, and tracking both the original and processed files.
+        Tracks processed science product in the CDF Tracker file database.
+        It involves initializing the database engine, setting up database tables,
+        and tracking both the original and processed files.
 
         :param science_filename_parser: The parser function to process file names.
         :type science_filename_parser: function
