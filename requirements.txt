@@ -1,5 +1,0 @@
-pytest
-pytest-astropy 
-pytest-cov
-flake8 
-black
