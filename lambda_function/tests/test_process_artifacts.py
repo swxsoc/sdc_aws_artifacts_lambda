@@ -5,9 +5,9 @@ from moto import mock_s3, mock_secretsmanager
 
 os.environ["SDC_AWS_CONFIG_FILE_PATH"] = "lambda_function/src/config.yaml"
 
-from src.process_artifacts.process_artifacts import (
-    handle_event,
-    ArtifactProcessor,
+from src.process_artifacts.process_artifacts import (  # noqa: E402
+    handle_event,  # noqa: E402
+    ArtifactProcessor,  # noqa: E402
 )  # noqa: E402
 
 
