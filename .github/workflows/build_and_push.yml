@@ -25,7 +25,7 @@ jobs:
         git clone https://github.com/HERMES-SOC/sdc_aws_artifacts_lambda.git && cd sdc_aws_artifacts_lambda/lambda_function
 
         # Build and push the Docker image
-        docker build -t dev-sdc_aws_artifacts_lambda . --no-cache
+        docker build -t dev-sdc_aws_artifacts_lambda --network=host . --no-cache
         docker tag dev-sdc_aws_artifacts_lambda:latest 351967858401.dkr.ecr.us-east-1.amazonaws.com/dev-sdc_aws_artifacts_lambda:latest
         docker push 351967858401.dkr.ecr.us-east-1.amazonaws.com/dev-sdc_aws_artifacts_lambda:latest
 
@@ -44,6 +44,6 @@ jobs:
         git clone https://github.com/HERMES-SOC/sdc_aws_artifacts_lambda.git && cd sdc_aws_artifacts_lambda/lambda_function
   
         # Build and push the Docker image
-        docker build -t dev-sdc_aws_artifacts_lambda . --no-cache
+        docker build -t dev-sdc_aws_artifacts_lambda --network=host . --no-cache
         docker tag dev-sdc_aws_artifacts_lambda:latest 351967858401.dkr.ecr.us-east-1.amazonaws.com/sdc_aws_artifacts_lambda:latest
         docker push 351967858401.dkr.ecr.us-east-1.amazonaws.com/sdc_aws_artifacts_lambda:latest
