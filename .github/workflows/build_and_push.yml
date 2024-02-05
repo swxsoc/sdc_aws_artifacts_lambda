@@ -15,7 +15,7 @@ jobs:
       if: github.ref == 'refs/heads/main'
       run: |
         # Clean up the workspace
-        rm -rf fswatcher
+        rm -rf sdc_aws_artifacts_lambda
         docker system prune -f
 
         # Login to AWS ECR
@@ -34,7 +34,7 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       run: |
         # Clean up the workspace
-        rm -rf fswatcher
+        rm -rf sdc_aws_artifacts_lambda
         docker system prune -f
   
         # Login to AWS ECR
