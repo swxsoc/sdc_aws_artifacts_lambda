@@ -22,14 +22,14 @@ jobs:
         aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 351967858401.dkr.ecr.us-east-1.amazonaws.com
 
         # Clone Repository
-        git clone https://github.com/HERMES-SOC/sdc_aws_artifacts_lambda.git && cd sdc_aws_artifacts_lambda
+        git clone https://github.com/HERMES-SOC/sdc_aws_artifacts_lambda.git && cd sdc_aws_artifacts_lambda/lambda_function
 
         # Build and push the Docker image
         docker build -t dev-sdc_aws_artifacts_lambda . --no-cache
         docker tag dev-sdc_aws_artifacts_lambda:latest 351967858401.dkr.ecr.us-east-1.amazonaws.com/dev-sdc_aws_artifacts_lambda:latest
         docker push 351967858401.dkr.ecr.us-east-1.amazonaws.com/dev-sdc_aws_artifacts_lambda:latest
 
-        
+
     - name: Build and Push Docker Image to AWS Production ECR
       if: startsWith(github.ref, 'refs/tags/')
       run: |
@@ -41,7 +41,7 @@ jobs:
         aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 351967858401.dkr.ecr.us-east-1.amazonaws.com
   
         # Clone Repository
-        git clone https://github.com/HERMES-SOC/sdc_aws_artifacts_lambda.git && cd sdc_aws_artifacts_lambda
+        git clone https://github.com/HERMES-SOC/sdc_aws_artifacts_lambda.git && cd sdc_aws_artifacts_lambda/lambda_function
   
         # Build and push the Docker image
         docker build -t dev-sdc_aws_artifacts_lambda . --no-cache
