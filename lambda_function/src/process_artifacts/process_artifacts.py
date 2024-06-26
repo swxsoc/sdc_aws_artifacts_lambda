@@ -285,9 +285,9 @@ class ArtifactProcessor:
                 cdftracker_config = ArtifactProcessor.get_cdftracker_config(
                     swxsoc.config
                 )
-                
+
                 log.info(swxsoc.config)
-                
+
                 log.info(cdftracker_config)
 
                 cdftracker.set_config(cdftracker_config)
