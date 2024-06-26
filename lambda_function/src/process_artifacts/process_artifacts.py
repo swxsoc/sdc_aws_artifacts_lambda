@@ -11,6 +11,10 @@ from pathlib import Path
 import boto3
 import botocore
 
+from itertools import combinations
+
+import swxsoc
+
 from sdc_aws_utils.logging import log, configure_logger
 from sdc_aws_utils.config import (
     TSD_REGION,
@@ -30,6 +34,8 @@ from sdc_aws_utils.slack import (
     SlackApiError,
 )
 
+
+import cdftracker
 from cdftracker.database import create_engine
 from cdftracker.database.tables import create_tables
 from cdftracker.tracker import tracker
@@ -275,6 +281,11 @@ class ArtifactProcessor:
                     f"postgresql://{secret['username']}:{secret['password']}@"
                     f"{secret['host']}:{secret['port']}/{secret['dbname']}"
                 )
+                
+                cdftracker_config = ArtifactProcessor.get_cdftracker_config(swxsoc.config)
+                
+                cdftracker.set_config(cdftracker_config)
+                
                 # Initialize the database engine
                 database_engine = create_engine(connection_string)
 
@@ -297,3 +308,44 @@ class ArtifactProcessor:
                         "message": f"Error when initializing database engine: {e}",
                     }
                 )
+
+    @staticmethod
+    def get_cdftracker_config(swxsoc_config: dict) -> dict:
+        """
+        Creates the CDFTracker configuration from the swxsoc configuration.
+        
+        :param config: The swxsoc configuration.
+        :type config: dict
+        :return: The CDFTracker configuration.
+        :rtype: dict
+        """
+        mission_data = swxsoc_config['mission']
+        instruments = mission_data['inst_names']
+
+        instruments_list = [
+            {
+                "instrument_id": idx + 1,
+                "description": f"{mission_data['inst_fullnames'][idx]} ({mission_data['inst_targetnames'][idx]})",
+                "full_name": mission_data['inst_fullnames'][idx],
+                "short_name": mission_data['inst_shortnames'][idx],
+            }
+            for idx in range(len(instruments))
+        ]
+
+        # Generate all possible configurations of the instruments
+        instrument_configurations = []
+        config_id = 1
+        for r in range(1, len(instruments) + 1):
+            for combo in combinations(range(1, len(instruments) + 1), r):
+                config = {"instrument_configuration_id": config_id}
+                config.update({f"instrument_{i+1}_id": combo[i] if i < len(combo) else None for i in range(len(instruments))})
+                instrument_configurations.append(config)
+                config_id += 1
+
+        cdftracker_config = {
+            "mission_name": mission_data['mission_name'],
+            "instruments": instruments_list,
+            "instrument_configurations": instrument_configurations,
+        }
+
+        return cdftracker_config
