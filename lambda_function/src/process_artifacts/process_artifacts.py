@@ -36,9 +36,6 @@ from sdc_aws_utils.slack import (
 
 
 import cdftracker
-from cdftracker.database import create_engine
-from cdftracker.database.tables import create_tables
-from cdftracker.tracker import tracker
 
 # Configure logger
 configure_logger()
@@ -291,6 +288,10 @@ class ArtifactProcessor:
                 log.info(cdftracker_config)
 
                 cdftracker.set_config(cdftracker_config)
+
+                from cdftracker.database import create_engine
+                from cdftracker.database.tables import create_tables
+                from cdftracker.tracker import tracker
 
                 # Initialize the database engine
                 database_engine = create_engine(connection_string)
