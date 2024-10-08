@@ -24,8 +24,10 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install -r requirements.dev.txt
+        python -m pip install -r requirements.txt
 
     - name: Run tests
       run: |
         pytest -s lambda_function/tests --cov=lambda_function/src --cov-report=html --log-cli-level=INFO 
+      env:
+        SWXSOC_MISSION: hermes

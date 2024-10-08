@@ -9,7 +9,7 @@ phases:
       - bash activate.sh
       - python -m pip install --upgrade pip
       - python -m pip install pytest pytest-astropy pytest-cov
-      - pip3 install -r requirements.dev.txt
+      - pip3 install -r requirements.txt
       - echo ________________________________
 
       - echo Linting with Black...

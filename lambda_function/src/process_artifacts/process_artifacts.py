@@ -332,7 +332,10 @@ class ArtifactProcessor:
         instruments_list = [
             {
                 "instrument_id": idx + 1,
-                "description": f"{mission_data['inst_fullnames'][idx]} ({mission_data['inst_targetnames'][idx]})",
+                "description": (
+                    f"{mission_data['inst_fullnames'][idx]} "
+                    f"({mission_data['inst_targetnames'][idx]})"
+                ),
                 "full_name": mission_data["inst_fullnames"][idx],
                 "short_name": mission_data["inst_shortnames"][idx],
             }
