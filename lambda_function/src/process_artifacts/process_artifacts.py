@@ -35,7 +35,7 @@ from sdc_aws_utils.slack import (
 )
 
 
-import cdftracker
+import metatracker
 
 # Configure logger
 configure_logger()
@@ -159,8 +159,8 @@ class ArtifactProcessor:
             self.environment,
         )
 
-        # Generate CDFTracker Artifacts
-        self._generate_cdftracker_artifacts(
+        # Generate MetaTracker Artifacts
+        self._generate_metatracker_artifacts(
             science_filename_parser,
             file_path,
         )
@@ -255,7 +255,7 @@ class ArtifactProcessor:
             )
 
     @staticmethod
-    def _generate_cdftracker_artifacts(science_filename_parser, file_path):
+    def _generate_metatracker_artifacts(science_filename_parser, file_path):
         """
         Tracks processed science product in the CDF Tracker file database.
         It involves initializing the database engine, setting up database tables,
@@ -279,19 +279,19 @@ class ArtifactProcessor:
                     f"{secret['host']}:{secret['port']}/{secret['dbname']}"
                 )
 
-                cdftracker_config = ArtifactProcessor.get_cdftracker_config(
+                metatracker_config = ArtifactProcessor.get_metatracker_config(
                     swxsoc.config
                 )
 
                 log.info(swxsoc.config)
 
-                log.info(cdftracker_config)
+                log.info(metatracker_config)
 
-                cdftracker.set_config(cdftracker_config)
+                metatracker.set_config(metatracker_config)
 
-                from cdftracker.database import create_engine
-                from cdftracker.database.tables import create_tables
-                from cdftracker.tracker import tracker
+                from metatracker.database import create_engine
+                from metatracker.database.tables import create_tables
+                from metatracker.tracker import tracker
 
                 # Initialize the database engine
                 database_engine = create_engine(connection_string)
@@ -299,8 +299,8 @@ class ArtifactProcessor:
                 # Setup the database tables if they do not exist
                 create_tables(database_engine)
 
-                # Set tracker to CDFTracker
-                cdf_tracker = tracker.CDFTracker(
+                # Set tracker to MetaTracker
+                cdf_tracker = tracker.MetaTracker(
                     database_engine, science_filename_parser
                 )
 
@@ -317,13 +317,13 @@ class ArtifactProcessor:
                 )
 
     @staticmethod
-    def get_cdftracker_config(swxsoc_config: dict) -> dict:
+    def get_metatracker_config(swxsoc_config: dict) -> dict:
         """
-        Creates the CDFTracker configuration from the swxsoc configuration.
+        Creates the MetaTracker configuration from the swxsoc configuration.
 
         :param config: The swxsoc configuration.
         :type config: dict
-        :return: The CDFTracker configuration.
+        :return: The MetaTracker configuration.
         :rtype: dict
         """
         mission_data = swxsoc_config["mission"]
@@ -357,10 +357,10 @@ class ArtifactProcessor:
                 instrument_configurations.append(config)
                 config_id += 1
 
-        cdftracker_config = {
+        metatracker_config = {
             "mission_name": mission_data["mission_name"],
             "instruments": instruments_list,
             "instrument_configurations": instrument_configurations,
         }
 
-        return cdftracker_config
+        return metatracker_config
