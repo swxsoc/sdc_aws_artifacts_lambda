@@ -6,14 +6,8 @@ the artifacts for science files based off which bucket the file is located in.
 
 import os
 import json
-from pathlib import Path
 
-import boto3
 import botocore
-
-from itertools import combinations
-
-import swxsoc
 
 from sdc_aws_utils.logging import log, configure_logger
 from sdc_aws_utils.config import (
@@ -34,8 +28,6 @@ from sdc_aws_utils.slack import (
     SlackApiError,
 )
 
-
-import metatracker
 
 # Configure logger
 configure_logger()
@@ -159,11 +151,6 @@ class ArtifactProcessor:
             self.environment,
         )
 
-        # Generate MetaTracker Artifacts
-        self._generate_metatracker_artifacts(
-            science_filename_parser,
-            file_path,
-        )
 
     @staticmethod
     def _generate_slack_artifacts(
@@ -254,113 +241,3 @@ class ArtifactProcessor:
                 }
             )
 
-    @staticmethod
-    def _generate_metatracker_artifacts(science_filename_parser, file_path):
-        """
-        Tracks processed science product in the CDF Tracker file database.
-        It involves initializing the database engine, setting up database tables,
-        and tracking both the original and processed files.
-
-        :param science_filename_parser: The parser function to process file names.
-        :type science_filename_parser: function
-        :param file_path: The path of the original file.
-        :type file_path: Path
-        """
-        secret_arn = os.getenv("RDS_SECRET_ARN", None)
-        if secret_arn:
-            try:
-                # Get Database Credentials
-                session = boto3.session.Session()
-                client = session.client(service_name="secretsmanager")
-                response = client.get_secret_value(SecretId=secret_arn)
-                secret = json.loads(response["SecretString"])
-                connection_string = (
-                    f"postgresql://{secret['username']}:{secret['password']}@"
-                    f"{secret['host']}:{secret['port']}/{secret['dbname']}"
-                )
-
-                metatracker_config = ArtifactProcessor.get_metatracker_config(
-                    swxsoc.config
-                )
-
-                log.info(swxsoc.config)
-
-                log.info(metatracker_config)
-
-                metatracker.set_config(metatracker_config)
-
-                from metatracker.database import create_engine
-                from metatracker.database.tables import create_tables
-                from metatracker.tracker import tracker
-
-                # Initialize the database engine
-                database_engine = create_engine(connection_string)
-
-                # Setup the database tables if they do not exist
-                create_tables(database_engine)
-
-                # Set tracker to MetaTracker
-                cdf_tracker = tracker.MetaTracker(
-                    database_engine, science_filename_parser
-                )
-
-                if cdf_tracker:
-                    # Track processed file in CDF
-                    cdf_tracker.track(Path(file_path))
-
-            except Exception as e:
-                log.error(
-                    {
-                        "status": "ERROR",
-                        "message": f"Error when initializing database engine: {e}",
-                    }
-                )
-
-    @staticmethod
-    def get_metatracker_config(swxsoc_config: dict) -> dict:
-        """
-        Creates the MetaTracker configuration from the swxsoc configuration.
-
-        :param config: The swxsoc configuration.
-        :type config: dict
-        :return: The MetaTracker configuration.
-        :rtype: dict
-        """
-        mission_data = swxsoc_config["mission"]
-        instruments = mission_data["inst_names"]
-
-        instruments_list = [
-            {
-                "instrument_id": idx + 1,
-                "description": (
-                    f"{mission_data['inst_fullnames'][idx]} "
-                    f"({mission_data['inst_targetnames'][idx]})"
-                ),
-                "full_name": mission_data["inst_fullnames"][idx],
-                "short_name": mission_data["inst_shortnames"][idx],
-            }
-            for idx in range(len(instruments))
-        ]
-
-        # Generate all possible configurations of the instruments
-        instrument_configurations = []
-        config_id = 1
-        for r in range(1, len(instruments) + 1):
-            for combo in combinations(range(1, len(instruments) + 1), r):
-                config = {"instrument_configuration_id": config_id}
-                config.update(
-                    {
-                        f"instrument_{i+1}_id": combo[i] if i < len(combo) else None
-                        for i in range(len(instruments))
-                    }
-                )
-                instrument_configurations.append(config)
-                config_id += 1
-
-        metatracker_config = {
-            "mission_name": mission_data["mission_name"],
-            "instruments": instruments_list,
-            "instrument_configurations": instrument_configurations,
-        }
-
-        return metatracker_config
