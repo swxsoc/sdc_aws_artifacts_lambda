@@ -151,7 +151,6 @@ class ArtifactProcessor:
             self.environment,
         )
 
-
     @staticmethod
     def _generate_slack_artifacts(
         filename_path,
@@ -240,4 +239,3 @@ class ArtifactProcessor:
                     "message": "Timestream Client could not be initialized",
                 }
             )
-
