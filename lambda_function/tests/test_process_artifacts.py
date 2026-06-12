@@ -1,15 +1,12 @@
 import json
 import os
 from unittest.mock import patch
-from moto import mock_s3, mock_secretsmanager
 
-os.environ["SDC_AWS_CONFIG_FILE_PATH"] = "lambda_function/src/config.yaml"
+from moto import mock_aws as moto_mock_aws
+import pytest
 
-from src.process_artifacts.process_artifacts import (  # noqa: E402
-    handle_event,  # noqa: E402
-    ArtifactProcessor,  # noqa: E402
-)  # noqa: E402
-
+from src.process_artifacts.process_artifacts import ArtifactProcessor  # noqa: E402
+from src.process_artifacts.process_artifacts import handle_event  # noqa: E402; noqa: E402
 
 # Constants for testing
 TEST_S3_BUCKET = "hermes-eea"
@@ -37,9 +34,13 @@ TEST_EVENT = {
 }
 
 
+@pytest.fixture(scope="function")
+def mock_aws():
+    """Mock AWS services using moto."""
+    with moto_mock_aws():
+        yield
+
 # Mock boto3 S3 and Secrets Manager services
-@mock_s3
-@mock_secretsmanager
 def setup_mocks():
     # Setup S3
     import boto3
@@ -65,8 +66,7 @@ def setup_mocks():
 
 
 # Tests for handle_event function
-@mock_s3
-def test_handle_event_success():
+def test_handle_event_success(mock_aws):
     setup_mocks()
     response = handle_event(TEST_EVENT, None)
     assert response == {"statusCode": 200, "body": "Artifacts Processed Successfully"}
@@ -74,8 +74,7 @@ def test_handle_event_success():
 
 # Tests for ArtifactProcessor class
 @patch("src.process_artifacts.process_artifacts.ArtifactProcessor._process_artifacts")
-@mock_s3
-def test_artifact_processor_initialization(mock_process_artifacts):
+def test_artifact_processor_initialization(mock_process_artifacts, mock_aws):
     setup_mocks()
     processor = ArtifactProcessor(TEST_S3_BUCKET, TEST_FILE_KEY, TEST_ENVIRONMENT)
     assert processor is not None

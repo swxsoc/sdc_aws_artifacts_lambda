@@ -4,46 +4,48 @@ the appropriate HERMES intrument library to use when processing
 the artifacts for science files based off which bucket the file is located in.
 """
 
-import os
 import json
+import os
+from typing import Any
 
 import botocore
-
-from sdc_aws_utils.logging import log, configure_logger
-from sdc_aws_utils.config import (
-    TSD_REGION,
-    parser as science_filename_parser,
-    get_instrument_bucket,
-)
 from sdc_aws_utils.aws import (
     create_timestream_client_session,
-    log_to_timestream,
     get_science_file,
+    log_to_timestream,
     parse_file_key,
 )
-
+from sdc_aws_utils.config import TSD_REGION, get_instrument_bucket
+from sdc_aws_utils.config import parser as science_filename_parser
+from sdc_aws_utils.logging import configure_logger, log
 from sdc_aws_utils.slack import (
+    SlackApiError,
     get_slack_client,
     send_pipeline_notification,
-    SlackApiError,
 )
-
 
 # Configure logger
 configure_logger()
 
 
-def handle_event(event, context) -> dict:
+def handle_event(event: dict[str, Any], context: Any) -> dict[str, int | str]:
     """
-    Handles the event passed to the lambda function to initialize the ArtifactProcessor
+    Process a Lambda event and dispatch file artifact processing work.
 
-    :param event: Event data passed from the lambda trigger
-    :type event: dict
-    :param context: Lambda context
-    :type context: dict
-    :return: Returns a 200 (Successful) / 500 (Error) HTTP response
-    :rtype: dict
+    Parameters
+    ----------
+    event : dict[str, Any]
+        Triggering AWS Lambda event. Supports S3 ``Records`` events and empty
+        events that trigger a full incoming-bucket scan and sorting of all files.
+    context : Any
+        AWS Lambda context object (accepted for compatibility).
+
+    Returns
+    -------
+    dict[str, int | str]
+        Response dictionary containing ``statusCode`` and serialized ``body``.
     """
+
     try:
         environment = os.getenv("LAMBDA_ENVIRONMENT", "DEVELOPMENT")
 
@@ -73,21 +75,29 @@ def handle_event(event, context) -> dict:
 
 class ArtifactProcessor:
     """
-    The ArtifactProcessor class will then determine which instrument
-    library to use to process the file.
+    Dispatch artifact generation for a science file to the appropriate
+    instrument library based on its source S3 bucket.
 
-    :param s3_bucket: The name of the S3 bucket the file is located in
-    :type s3_bucket: str
-    :param file_key: The name of the S3 object that is being processed
-    :type file_key: str
-    :param environment: The environment the ArtifactProcessor is running in
-    :type environment: str
-    :param dry_run: Whether or not the ArtifactProcessor is performing a dry run
-    :type dry_run: bool
+    Parameters
+    ----------
+    s3_bucket : str
+        Name of the S3 bucket the file is located in.
+    file_key : str
+        Key (object name) of the S3 object being processed.
+    environment : str
+        Environment the ArtifactProcessor is running in
+        (e.g. ``"DEVELOPMENT"`` or ``"PRODUCTION"``).
+    dry_run : str, optional
+        Truthy value indicates a dry run in which side effects are skipped.
+        Defaults to ``None``.
     """
 
     def __init__(
-        self, s3_bucket: str, file_key: str, environment: str, dry_run: str = None
+        self,
+        s3_bucket: str,
+        file_key: str,
+        environment: str,
+        dry_run: str | None = None,
     ) -> None:
         # Initialize Class Variables
         self.instrument_bucket_name = s3_bucket
@@ -105,11 +115,14 @@ class ArtifactProcessor:
 
     def _process_artifacts(self) -> None:
         """
-        This method serves as the main entry point for the ArtifactProcessor class.
-        It will then determine which instrument library to use to process the file.
+        Main entry point for the ArtifactProcessor.
 
-        :return: None
-        :rtype: None
+        Parses the file key, downloads the science file, and generates
+        Slack and Timestream artifacts for it.
+
+        Returns
+        -------
+        None
         """
         log.debug(
             {
@@ -131,7 +144,7 @@ class ArtifactProcessor:
         destination_bucket = get_instrument_bucket(this_instr, self.environment)
 
         # Download file from S3 or get local file path
-        file_path = get_science_file(
+        _ = get_science_file(
             self.instrument_bucket_name,
             self.file_key,
             parsed_file_key,
@@ -153,14 +166,22 @@ class ArtifactProcessor:
 
     @staticmethod
     def _generate_slack_artifacts(
-        filename_path,
-    ):
+        filename_path: str,
+    ) -> None:
         """
-        Generates and sends Slack notifications for the file processing pipeline.
-        Includes error handling for Slack API interactions.
+        Send Slack notifications for the file processing pipeline.
 
-        :param filename_path: The pathname of the new file.
-        :type filename_path: str
+        Handles errors raised by the Slack API so that failures do not
+        interrupt processing of subsequent artifacts.
+
+        Parameters
+        ----------
+        filename_path : str
+            Pathname of the new file to announce in Slack.
+
+        Returns
+        -------
+        None
         """
         try:
             # Initialize the slack client
@@ -200,21 +221,31 @@ class ArtifactProcessor:
 
     @staticmethod
     def _generate_timestream_artifacts(
-        file_key, new_file_key, destination_bucket, environment
-    ):
+        file_key: str,
+        new_file_key: str,
+        destination_bucket: str,
+        environment: str,
+    ) -> None:
         """
-        Logs file processing events to Amazon Timestream.
-        Handles the initialization of the Timestream client
-        and logs the necessary information.
+        Log file processing events to Amazon Timestream.
 
-        :param file_key: The key of the original file.
-        :type file_key: str
-        :param new_file_key: The key of the processed file.
-        :type new_file_key: str
-        :param destination_bucket: The name of the S3 bucket where the processed file is stored.
-        :type destination_bucket: str
-        :param environment: The current running environment.
-        :type environment: str
+        Initializes the Timestream client and records a ``PUT`` action
+        for the processed file.
+
+        Parameters
+        ----------
+        file_key : str
+            Key of the original file.
+        new_file_key : str
+            Key of the processed file.
+        destination_bucket : str
+            Name of the S3 bucket where the processed file is stored.
+        environment : str
+            Current running environment.
+
+        Returns
+        -------
+        None
         """
         try:
             # Initialize Timestream Client
