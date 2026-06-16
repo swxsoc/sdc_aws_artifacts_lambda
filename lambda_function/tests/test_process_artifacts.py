@@ -1,12 +1,11 @@
 import json
-import os
 from unittest.mock import patch
 
 from moto import mock_aws as moto_mock_aws
 import pytest
 
-from src.process_artifacts.process_artifacts import ArtifactProcessor  # noqa: E402
-from src.process_artifacts.process_artifacts import handle_event  # noqa: E402; noqa: E402
+from src.process_artifacts.process_artifacts import ArtifactProcessor
+from src.process_artifacts.process_artifacts import handle_event
 
 # Constants for testing
 TEST_S3_BUCKET = "hermes-eea"
@@ -39,6 +38,7 @@ def mock_aws():
     """Mock AWS services using moto."""
     with moto_mock_aws():
         yield
+
 
 # Mock boto3 S3 and Secrets Manager services
 def setup_mocks():
