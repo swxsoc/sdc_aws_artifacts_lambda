@@ -7,11 +7,7 @@ FROM ${BASE_IMAGE}
 ARG ROOT="/"
 ARG FUNCTION_DIR="/lambda_function/"
 
-# Set default values for requirements file
-ARG REQUIREMENTS_FILE="hermes-requirements.txt"
-
-# Copy requirements file to root directory
-COPY ${REQUIREMENTS_FILE} ${ROOT}requirements.txt 
+COPY requirements.txt ${ROOT}
 
 # Update pip and install setuptools
 RUN pip install --upgrade pip setuptools

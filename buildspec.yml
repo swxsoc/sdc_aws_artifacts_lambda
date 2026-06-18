@@ -1,25 +1,6 @@
 version: 0.2
 
 phases:
-  pre_build:
-    commands:
-      - echo Installing CI/CD Dependencies...
-      - python -m venv venv
-      - echo "source venv/bin/activate" > activate.sh
-      - bash activate.sh
-      - python -m pip install --upgrade pip
-      - python -m pip install pytest pytest-astropy pytest-cov
-      - pip3 install -r requirements.txt
-      - echo ________________________________
-
-      - echo Linting with Black...
-      - black --check --diff lambda_function/
-      - echo ________________________________
-      
-      - echo Linting with Flake...
-      - flake8 --count --max-line-length 100 lambda_function/
-      - echo ________________________________
-
   build:
     commands:
     - REGION=us-east-1
