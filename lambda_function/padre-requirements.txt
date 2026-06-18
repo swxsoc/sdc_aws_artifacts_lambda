@@ -1,3 +1,0 @@
-sdc_aws_utils @ git+https://github.com/swxsoc/sdc_aws_utils.git
-padre_meddea @ git+https://github.com/PADRESat/padre_meddea.git
-padre_sharp @ git+https://github.com/PADRESat/padre_sharp.git
