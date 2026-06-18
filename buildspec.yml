@@ -1,15 +1,6 @@
 version: 0.2
 
 phases:
-  pre_build:
-    commands:
-      - echo Installing CI/CD Dependencies...
-      - python -m venv venv
-      - echo "source venv/bin/activate" > activate.sh
-      - bash activate.sh
-      - python -m pip install --upgrade pip
-      - python -m pip install pytest pytest-astropy pytest-cov
-
   build:
     commands:
     - REGION=us-east-1
