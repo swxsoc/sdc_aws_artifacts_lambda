@@ -9,23 +9,16 @@ import os
 from typing import Any
 
 import botocore
-from sdc_aws_utils.aws import (
-    create_timestream_client_session,
-    get_science_file,
-    log_to_timestream,
-    parse_file_key,
-)
-from sdc_aws_utils.config import TSD_REGION, get_instrument_bucket
-from sdc_aws_utils.config import parser as science_filename_parser
-from sdc_aws_utils.logging import configure_logger, log
-from sdc_aws_utils.slack import (
+from swxsoc import log
+from swxsoc.comm.slack import (
     SlackApiError,
     get_slack_client,
     send_pipeline_notification,
 )
-
-# Configure logger
-configure_logger()
+from swxsoc.db.timeseries import create_timestream_client_session, log_to_timestream
+from swxsoc.io.s3 import get_science_file, parse_file_key
+from swxsoc.util.config import TSD_REGION, get_instrument_bucket
+from swxsoc.util.util import parse_science_filename
 
 
 def handle_event(event: dict[str, Any], context: Any) -> dict[str, int | str]:
@@ -139,9 +132,9 @@ class ArtifactProcessor:
         parsed_file_key = parse_file_key(self.file_key)
 
         # Parse the science file name
-        science_file = science_filename_parser(parsed_file_key)
+        science_file = parse_science_filename(parsed_file_key)
         this_instr = science_file["instrument"]
-        destination_bucket = get_instrument_bucket(this_instr, self.environment)
+        destination_bucket = get_instrument_bucket(this_instr)
 
         # Download file from S3 or get local file path
         _ = get_science_file(
@@ -260,7 +253,6 @@ class ArtifactProcessor:
                     new_file_key=new_file_key,
                     source_bucket=destination_bucket,
                     destination_bucket=destination_bucket,
-                    environment=environment,
                 )
 
         except botocore.exceptions.ClientError:
