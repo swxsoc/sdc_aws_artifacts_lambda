@@ -25,14 +25,11 @@ def default_test_mission(monkeypatch):
     mission in their example code if they need a specific mission configuration.
     """
     import swxsoc
-    from sdc_aws_utils.config import _reconfigure_globals
 
     # Only set if not already set (allows tests to override)
     if "SWXSOC_MISSION" not in os.environ:
         monkeypatch.setenv("SWXSOC_MISSION", "hermes")
-        swxsoc._reconfigure()
-        # Re-read module-level globals in config.py so they reflect the new mission
-        _reconfigure_globals()
+        swxsoc.reconfigure()
 
 
 @pytest.fixture(scope="function")
@@ -72,17 +69,14 @@ def use_mission(request, monkeypatch):
             assert swxsoc.config['mission']['mission_name'] == use_mission
     """
     import swxsoc
-    from sdc_aws_utils.config import _reconfigure_globals
 
     mission = request.param if hasattr(request, "param") else "hermes"
     monkeypatch.setenv("SWXSOC_MISSION", mission)
-    swxsoc._reconfigure()
-    _reconfigure_globals()
+    swxsoc.reconfigure()
     yield mission
     # Explicitly reconfigure back to default after test completes
     # This is necessary because swxsoc.config is module-level state
     # that persists across tests in the same process
     # This ensures the config is reset even if monkeypatch cleanup hasn't run yet
     monkeypatch.setenv("SWXSOC_MISSION", "hermes")
-    swxsoc._reconfigure()
-    _reconfigure_globals()
+    swxsoc.reconfigure()
