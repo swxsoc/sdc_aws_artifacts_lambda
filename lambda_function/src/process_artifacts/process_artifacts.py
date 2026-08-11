@@ -10,11 +10,7 @@ from typing import Any
 
 import botocore
 from swxsoc import log
-from swxsoc.comm.slack import (
-    SlackApiError,
-    get_slack_client,
-    send_pipeline_notification,
-)
+from swxsoc.comm import get_comms_client
 from swxsoc.db.timeseries import create_timestream_client_session, log_to_timestream
 from swxsoc.io.s3 import get_science_file, parse_file_key
 from swxsoc.util.config import TSD_REGION, get_instrument_bucket
@@ -144,8 +140,8 @@ class ArtifactProcessor:
             self.dry_run,
         )
 
-        # Generate Slack Artifacts
-        self._generate_slack_artifacts(
+        # Generate Comms (Slack/Mattermost) Artifacts
+        self._generate_comms_artifacts(
             parsed_file_key,
         )
 
@@ -158,57 +154,36 @@ class ArtifactProcessor:
         )
 
     @staticmethod
-    def _generate_slack_artifacts(
+    def _generate_comms_artifacts(
         filename_path: str,
     ) -> None:
         """
-        Send Slack notifications for the file processing pipeline.
+        Send pipeline notifications for the file processing pipeline.
 
-        Handles errors raised by the Slack API so that failures do not
-        interrupt processing of subsequent artifacts.
+        Handles errors raised during comms client initialization so that
+        failures do not interrupt processing of subsequent artifacts.
 
         Parameters
         ----------
         filename_path : str
-            Pathname of the new file to announce in Slack.
+            Pathname of the new file to announce.
 
         Returns
         -------
         None
         """
         try:
-            # Initialize the slack client
-            slack_client = get_slack_client(
-                slack_token=os.getenv("SDC_AWS_SLACK_TOKEN")
+            comms_client = get_comms_client()
+            comms_client.send_notification(
+                file_path=filename_path,
+                alert_type="processed",
             )
-
-            # Initialize the slack channel
-            slack_channel = os.getenv("SDC_AWS_SLACK_CHANNEL")
-
-            # Send Slack Notification
-            if slack_client and slack_channel:
-                send_pipeline_notification(
-                    slack_client=slack_client,
-                    slack_channel=slack_channel,
-                    path=filename_path,
-                    alert_type="processed",
-                )
-
-        except SlackApiError as e:
-            error_code = int(e.response["Error"]["Code"])
-            if error_code == 404:
-                log.error(
-                    {
-                        "status": "ERROR",
-                        "message": "Slack Token is invalid",
-                    }
-                )
 
         except Exception as e:
             log.error(
                 {
                     "status": "ERROR",
-                    "message": f"Error when initializing slack client: {e}",
+                    "message": f"Error when initializing comms client: {e}",
                 }
             )
 
