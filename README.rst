@@ -26,7 +26,24 @@ Overview
 
 This repository defines the image to be used for the SWSOC file artifacts Lambda function container. 
 This container will be built and and stored in an ECR Repo. 
-The container will contain the latest release code as the production environment and the latest code on master as the development.
+The container will contain the latest release code as the production environment and the latest code on ``main`` as the development.
+
+Deployment contract
+-------------------
+
+CodeBuild publishes only an exact current ``main`` commit or a release tag.
+Pull requests, stale commits, and other branches finish without pushing an
+image. The mission is derived from the CodeBuild project name. Development is
+the default; ``CDK_ENVIRONMENT=PRODUCTION`` or a release tag selects
+production.
+
+When a mission base-image build starts this project, it passes a versioned
+``PUBLIC_ECR_REPO`` URI and the normalized ``CDK_ENVIRONMENT``. The build
+verifies that the URI belongs to the expected mission and environment and
+rejects ``latest`` before using it. Direct Lambda builds fall back to the
+matching mission base image's ``latest`` tag. Successful image pushes start
+the mission's architecture project from its ``main`` branch with the immutable
+Lambda tag.
 
 Running Unit Tests
 ------------------
@@ -39,8 +56,9 @@ Testing Locally (Using own Test Data)
 -------------------------------------
 
 The container image can be built and run locally. You can specify the base image at runtime.
-At the time of writing, the base image defaults to
-``padre-swsoc-docker-lambda-base:latest`` in AWS.
+By default, the Dockerfile uses
+``dev-swsoc-docker-lambda-base:latest``. Mission CodeBuild projects select
+their matching base image.
 
 .. code-block:: sh
 

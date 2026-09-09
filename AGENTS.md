@@ -84,6 +84,9 @@ lambda_function/src/process_artifacts/process_artifacts.py imports from swxsoc:
 - `EXE002`: Executable file without shebang (expected in container)
 - `BLE001`, `TRY201`, `RUF028`, `SIM115`: Specific code style exceptions
 
+CodeBuild does not duplicate linting or unit tests. GitHub Actions runs
+validation-only `ruff check .` and `ruff format --check .`.
+
 ## Architecture & Key Concepts
 
 ### Event Flow
@@ -137,6 +140,13 @@ See [.github/workflows/](/.github/workflows/) for workflow definitions:
 - **testing.yml**: Runs on PR, `workflow_dispatch`, and daily schedule; runs tests with coverage
 - Coverage reports uploaded to Codecov
 - Codestyle workflow (linting) via Ruff
+
+The CodeBuild pipeline in [buildspec.yml](buildspec.yml):
+- Publishes only the exact current `main` commit or a release tag
+- Derives and validates mission/environment context from CodeBuild metadata
+- Uses a validated, versioned `PUBLIC_ECR_REPO` base image when supplied upstream
+- Uses the shared `lambda_function/requirements.txt` for every mission
+- Starts the mission architecture project from `main` with the exact image tag
 
 ## Common Development Tasks
 
